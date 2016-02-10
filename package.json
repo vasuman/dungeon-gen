@@ -1,0 +1,30 @@
+{
+  "name": "dungeon-gen",
+  "version": "1.0.0",
+  "description": "Generates dungeons",
+  "main": "index.js",
+  "scripts": {
+    "test": "true",
+    "build": "node_modules/webpack/bin/webpack.js -p"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vasuman/dungeon-gen.git"
+  },
+  "keywords": [
+    "procedural",
+    "generation"
+  ],
+  "author": "Vasuman",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vasuman/dungeon-gen/issues"
+  },
+  "homepage": "https://github.com/vasuman/dungeon-gen#readme",
+  "devDependencies": {
+    "babel-core": "^6.5.1",
+    "babel-loader": "^6.2.2",
+    "babel-preset-es2015": "^6.5.0",
+    "webpack": "^1.12.13"
+  }
+}
