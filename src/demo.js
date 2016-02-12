@@ -8,31 +8,40 @@ const H = 600;
 const T = 10;
 
 const PART_OPTIONS = {
-  depth: 1,
-  varf: 0.2,
-  sqf: 1,
+  depth: 4,
+  varf: 0.15,
+  sqf: 0.7,
   gap: 10,
-  delay: 50
+  delay: 400
 };
 
-Object.assign(ROOM_OPTIONS, PART_OPTIONS);
-
 function partitions(ctx, options) {
+
+  function drawRect(rect) {
+    rect.round();
+    console.log(rect);
+    ctx.fillStyle = random.color();
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  }
+
   ctx.fillStyle = 'black';
   ctx.fillRect(0, 0, W, H);
   let bounds = new Rect(0, 0, W, H);
   let root = new Partition(bounds, options, options.depth);
   let gen = root.gen(false);
+  let left, right;
+
   let timer = setInterval(() => {
-    let { value, done } = gen.next();
+    let { value, done } = gen.next(false);
     if (done) {
+      drawRect(right.rect);
       clearInterval(timer);
       return;
     }
-    let rect = value.children[0].rect;
-    ctx.fillStyle = random.color();
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    [ left, right ] = value.children;
+    drawRect(left.rect);
   }, options.delay);
+
   return root;
 }
 

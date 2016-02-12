@@ -1,5 +1,7 @@
 import * as random from 'webgame-lib/lib/random';
+
 export default class Partition {
+
   constructor(rect, params, depth = 0) {
     this.rect = rect;
     this.children = [];
