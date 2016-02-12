@@ -1,12 +1,11 @@
-import * as random from './random.js';
-import { Box } from 'webgame-lib/lib/math';
+import * as random from 'webgame-lib/lib/random';
+import { Rect } from 'webgame-lib/lib/math';
+import Partition from './partition.js';
 
-const SPLIT_VAR = 0.2;
-const SQUARENESS = 2;
-const MIN_ROOMS = 8;
+const SPACE = 1;
+
 const MIN_DIM = 7;
 const MAX_DIM = 16;
-const SELECT = 5;
 
 class Room {
 
@@ -15,59 +14,39 @@ class Room {
     let h = random.i(minD, part.h / 2);
     let x = part.x + random.i(0, part.w - w);
     let y = part.y + random.i(0, part.h - h);
-    this.box = new Box(x, y, w, h);
+    this.bounds = new Rect(x, y, w, h);
   }
 
-}
-
-export function splitRec(process, bounds, varf, squareness, depth = 0) {
-  let vert = random.bool(bounds.w / bounds.h, squareness);
-  let f = random.f(0.5 - varf, 0.5 + varf);
-
-  for (let child of bounds.split(f, vert)) {
-    if (process(child.round(), depth)) {
-      splitRec(process, child, varf, squareness, depth + 1);
-    }
-  }
 }
 
 export class Dungeon {
 
   constructor(w, h) {
-    this.bounds = new Box(0, 0, w, h);
+    this.bounds = new Rect(0, 0, w, h);
   }
 
-  buildRooms() {
+  buildRooms(root) {
     this.rooms = [];
-
-    splitRec((part) => {
-      if (Math.min(part.w, part.h) < MIN_DIM) {
-        // discard
-        return false;
+    let gen = root.gen();
+    let picked = false;
+    while (true) {
+      let { value, done } = gen.next(picked);
+      if (done) {
+        break;
       }
-      if (Math.max(part.w, part.h) > MAX_DIM) {
-        // continue splitting
-        return true;
+      picked = value.leaf;
+      if (!picked) {
+        this.rooms.push(new Room(value.rect.shrink(SPACE).round()));
       }
-      if (random.bool(SELECT)) {
-        // make room
-        this.rooms.push(new Room(part.shrink(2), MIN_DIM - 1));
-        return false;
-      }
-      return true;
-    }, this.bounds, SPLIT_VAR, SQUARENESS);
-
-    console.log(this.rooms);
+    }
   }
 
   connect() {
-
     // randomly connect nearby dungeons
     for (let room of this.rooms) {
       let nearest = null;
       for (let others of this.rooms) {
         if (others !== room) {
-          let dist = others.box.middle().round()
         }
       }
     }

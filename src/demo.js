@@ -1,47 +1,69 @@
-import { Box } from 'webgame-lib/lib/math';
+import { Rect } from 'webgame-lib/lib/math';
+import * as random from 'webgame-lib/lib/random';
+import Partition from './partition.js';
 import { Dungeon, splitRec } from './dungeon.js';
-
-let can, ctx, container;
 
 const W = 800;
 const H = 600;
-const T = 20;
+const T = 10;
 
-function drawBox(b) {
-  ctx.fillRect(b.x * T, b.y * T, b.w * T, b.h * T);
-}
+const PART_OPTIONS = {
+  depth: 1,
+  varf: 0.2,
+  sqf: 1,
+  gap: 10,
+  delay: 50
+};
 
-function showPartition() {
-  ctx.clearRect(0, 0, W, H);
+Object.assign(ROOM_OPTIONS, PART_OPTIONS);
 
-  splitRec((b, d) => {
-    if (d == 3) {
-      ctx.fillStyle = Math.random() < 0.5 ? 'gray' : 'black';
-      drawBox(b.shrink(1));
-      return false;
+function partitions(ctx, options) {
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, W, H);
+  let bounds = new Rect(0, 0, W, H);
+  let root = new Partition(bounds, options, options.depth);
+  let gen = root.gen(false);
+  let timer = setInterval(() => {
+    let { value, done } = gen.next();
+    if (done) {
+      clearInterval(timer);
+      return;
     }
-    return true;
-  }, new Box(0, 0, W / T, H / T), 0.1, 1.2);
+    let rect = value.children[0].rect;
+    ctx.fillStyle = random.color();
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  }, options.delay);
+  return root;
 }
 
-function showRooms() {
+function rooms(ctx, root, t) {
   ctx.clearRect(0, 0, W, H);
-  let d = new Dungeon(W / T, H / T);
-  d.buildRooms();
-
+  ctx.fillStyle = 'black';
+  let d = new Dungeon(W / t, H / t);
+  d.buildRooms(root);
   for (let room of d.rooms) {
-    drawBox(room.box);
+    let r = room.bounds;
+    console.log(r);
+    ctx.fillRect(r.x * t, r.y * t, r.w * t, r.h * t);
   }
+}
+
+function getContext() {
+  let can = document.createElement('canvas');
+  let ctx = can.getContext('2d');
+  can.width = W;
+  can.height = H;
+  let container = document.createElement('div');
+  container.style.display = 'inline-block';
+  container.appendChild(can);
+  document.body.appendChild(container);
+  return ctx;
 }
 
 window.addEventListener('load', () => {
   console.clear();
-  can = document.createElement('canvas');
-  ctx = can.getContext('2d');
-  can.width = W;
-  can.height = H;
-  container = document.createElement('div');
-  container.appendChild(can);
-  document.body.appendChild(container);
-  container.addEventListener('click', showRooms);
+  let partCtx = getContext();
+  let root = partitions(partCtx, PART_OPTIONS);
+  let roomCtx = getContext();
+  rooms(roomCtx, root, T);
 });
