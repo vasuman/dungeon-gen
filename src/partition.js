@@ -33,5 +33,6 @@ export default class Partition {
       return new Partition(half, { sqf, varf }, depth - 1);
     });
   }
+
 }
 
