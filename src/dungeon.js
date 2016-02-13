@@ -36,7 +36,7 @@ export class Dungeon {
       }
       picked = value.leaf;
       if (!picked) {
-        this.rooms.push(new Room(value.rect.shrink(SPACE).round()));
+        this.rooms.push(new Room(value.rect, MIN_DIM));
       }
     }
   }

@@ -8,18 +8,16 @@ const H = 600;
 const T = 10;
 
 const PART_OPTIONS = {
-  depth: 4,
-  varf: 0.15,
-  sqf: 0.7,
+  depth: 3,
+  varf: 0.2,
+  sqf: 1,
   gap: 10,
-  delay: 400
+  delay: 50
 };
 
 function partitions(ctx, options) {
 
   function drawRect(rect) {
-    rect.round();
-    console.log(rect);
     ctx.fillStyle = random.color();
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
   }
@@ -30,18 +28,16 @@ function partitions(ctx, options) {
   let root = new Partition(bounds, options, options.depth);
   let gen = root.gen(false);
   let left, right;
-
   let timer = setInterval(() => {
     let { value, done } = gen.next(false);
     if (done) {
-      drawRect(right.rect);
       clearInterval(timer);
+      drawRect(right.rect);
       return;
     }
     [ left, right ] = value.children;
     drawRect(left.rect);
   }, options.delay);
-
   return root;
 }
 
@@ -52,8 +48,7 @@ function rooms(ctx, root, t) {
   d.buildRooms(root);
   for (let room of d.rooms) {
     let r = room.bounds;
-    console.log(r);
-    ctx.fillRect(r.x * t, r.y * t, r.w * t, r.h * t);
+    ctx.fillRect(r.x, r.y, r.w, r.h);
   }
 }
 

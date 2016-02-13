@@ -6,7 +6,7 @@
   "scripts": {
     "test": "true",
     "build": "node_modules/webpack/bin/webpack.js -p",
-    "serve": "webpack-dev-server -w -d"
+    "serve": "node_modules/webpack-dev-server/bin/webpack-dev-server.js -w -d"
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
     "babel-loader": "^6.2.2",
     "babel-polyfill": "^6.5.0",
     "babel-preset-es2015": "^6.5.0",
-    "webpack": "^1.12.13"
+    "webpack": "^1.12.13",
+    "webpack-dev-server": "^1.14.1"
   }
 }
