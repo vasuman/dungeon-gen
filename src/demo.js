@@ -5,7 +5,7 @@ import { Dungeon, splitRec } from './dungeon.js';
 
 const W = 800;
 const H = 600;
-const T = 10;
+const T = 16;
 
 const PART_OPTIONS = {
   depth: 3,
@@ -44,11 +44,32 @@ function partitions(ctx, options) {
 function rooms(ctx, root, t) {
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = 'black';
-  let d = new Dungeon(W / t, H / t);
+  for (let part of root) {
+    part.rect.scale(1 / t).round();
+  }
+  let w = ~~(W / t);
+  let h = ~~(H / t);
+  let d = new Dungeon(w, h);
   d.buildRooms(root);
+  d.buildCorridors();
   for (let room of d.rooms) {
     let r = room.bounds;
-    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.fillRect(r.x * t, r.y * t, r.w * t, r.h * t);
+  }
+  ctx.strokeStyle = 'green';
+  for (let i = 0; i <= w; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * t, 0);
+      ctx.lineTo(i * t, H);
+      ctx.closePath();
+      ctx.stroke();
+  }
+  for (let j = 0; j <= h; j++) {
+      ctx.beginPath();
+      ctx.moveTo(0, j * t);
+      ctx.lineTo(W, j * t);
+      ctx.closePath();
+      ctx.stroke();
   }
 }
 
@@ -58,6 +79,7 @@ function getContext() {
   can.width = W;
   can.height = H;
   let container = document.createElement('div');
+  // container.style.position = 'absolute';
   container.style.display = 'inline-block';
   container.appendChild(can);
   document.body.appendChild(container);
@@ -69,5 +91,6 @@ window.addEventListener('load', () => {
   let partCtx = getContext();
   let root = partitions(partCtx, PART_OPTIONS);
   let roomCtx = getContext();
-  rooms(roomCtx, root, T);
+  rooms(roomCtx, root.clone(), T);
+  // document.body.style.position = 'relative';
 });

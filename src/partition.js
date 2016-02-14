@@ -26,6 +26,13 @@ export default class Partition {
     return this.gen();
   }
 
+  clone() {
+    let copy = new Partition(this.rect.clone());
+    copy.leaf = this.leaf;
+    copy.children = this.children.map((child) => child.clone());
+    return copy;
+  }
+
   split({ sqf, varf }, depth) {
     let vert = random.bool(this.rect.w / this.rect.h, sqf);
     let f = random.f(0.5 - varf, 0.5 + varf);
