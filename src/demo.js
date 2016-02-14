@@ -4,7 +4,7 @@ import Partition from './partition.js';
 import { Dungeon, splitRec } from './dungeon.js';
 
 const W = 800;
-const H = 600;
+const H = 640;
 const T = 16;
 
 const PART_OPTIONS = {
@@ -15,7 +15,13 @@ const PART_OPTIONS = {
   delay: 50
 };
 
-function partitions(ctx, options) {
+const DUNGEON_OPTIONS = {
+  grid: true,
+  spans: true,
+  ids: true
+};
+
+function showPartitions(ctx, options) {
 
   function drawRect(rect) {
     ctx.fillStyle = random.color();
@@ -41,7 +47,8 @@ function partitions(ctx, options) {
   return root;
 }
 
-function rooms(ctx, root, t) {
+function showDungeon(ctx, root, t, options) {
+
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = 'black';
   for (let part of root) {
@@ -52,25 +59,58 @@ function rooms(ctx, root, t) {
   let d = new Dungeon(w, h);
   d.buildRooms(root);
   d.buildCorridors();
+
+  // draw rooms
   for (let room of d.rooms) {
+    ctx.fillStyle = 'black';
     let r = room.bounds;
     ctx.fillRect(r.x * t, r.y * t, r.w * t, r.h * t);
   }
-  ctx.strokeStyle = 'green';
-  for (let i = 0; i <= w; i++) {
+
+  if (options.grid) {
+    // draw grid
+    ctx.strokeStyle = 'green';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= w; i++) {
       ctx.beginPath();
       ctx.moveTo(i * t, 0);
       ctx.lineTo(i * t, H);
       ctx.closePath();
       ctx.stroke();
-  }
-  for (let j = 0; j <= h; j++) {
+    }
+    for (let j = 0; j <= h; j++) {
       ctx.beginPath();
       ctx.moveTo(0, j * t);
       ctx.lineTo(W, j * t);
       ctx.closePath();
       ctx.stroke();
+    }
   }
+
+  if (options.spans) {
+    // draw spans
+    ctx.strokeStyle = 'blue';
+    ctx.lineWidth = 3;
+    for (let edge of d.corridors.keys()) {
+      let [a, b] = [...edge].map(r => r.bounds.center());
+      ctx.beginPath();
+      ctx.moveTo(a.x * t, a.y * t);
+      ctx.lineTo(b.x * t, b.y * t);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+
+  if (options.ids) {
+    // draw identifiers
+    for (let room of d.rooms) {
+      let c = room.bounds.center();
+      ctx.fillStyle = 'white';
+      ctx.textAlign = 'center';
+      ctx.fillText(room.id, c.x * t, c.y * t);
+    }
+  }
+
 }
 
 function getContext() {
@@ -83,14 +123,16 @@ function getContext() {
   container.style.display = 'inline-block';
   container.appendChild(can);
   document.body.appendChild(container);
+  ctx.font = '18px Arial';
   return ctx;
 }
 
 window.addEventListener('load', () => {
   console.clear();
+  random.seed(Math.random());
   let partCtx = getContext();
-  let root = partitions(partCtx, PART_OPTIONS);
+  let root = showPartitions(partCtx, PART_OPTIONS);
   let roomCtx = getContext();
-  rooms(roomCtx, root.clone(), T);
+  showDungeon(roomCtx, root.clone(), T, DUNGEON_OPTIONS);
   // document.body.style.position = 'relative';
 });

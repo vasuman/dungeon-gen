@@ -6,7 +6,7 @@
   "scripts": {
     "test": "true",
     "build": "node_modules/webpack/bin/webpack.js -p",
-    "serve": "node_modules/webpack-dev-server/bin/webpack-dev-server.js -w -d"
+    "serve": "node_modules/webpack-dev-server/bin/webpack-dev-server.js -w -d --host=\"\""
   },
   "repository": {
     "type": "git",
