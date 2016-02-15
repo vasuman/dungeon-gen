@@ -7,7 +7,7 @@ const W = 800;
 const H = 640;
 const T = 16;
 
-const PART_OPTIONS = {
+let partOptions = {
   depth: 3,
   varf: 0.2,
   sqf: 1,
@@ -15,13 +15,29 @@ const PART_OPTIONS = {
   delay: 50
 };
 
-const DUNGEON_OPTIONS = {
+let dungeonOptions = {
   grid: true,
   spans: true,
-  ids: true
+  delay: 1000
 };
 
-function showPartitions(ctx, options) {
+let corridorOptions = {
+  delay: 100
+};
+
+function tick(f, secs) {
+  let timer = setInterval(() => {
+    if (f()) {
+      clearInterval(timer);
+    }
+  }, secs);
+}
+
+function showCorridors(ctx, dungeon, t) {
+  ctx.fillRect(0, 0, W, H);
+}
+
+function showPartitions(ctx) {
 
   function drawRect(rect) {
     ctx.fillStyle = random.color();
@@ -31,23 +47,23 @@ function showPartitions(ctx, options) {
   ctx.fillStyle = 'black';
   ctx.fillRect(0, 0, W, H);
   let bounds = new Rect(0, 0, W, H);
-  let root = new Partition(bounds, options, options.depth);
+  let root = new Partition(bounds, partOptions, partOptions.depth);
   let gen = root.gen(false);
   let left, right;
-  let timer = setInterval(() => {
+  tick(() => {
     let { value, done } = gen.next(false);
     if (done) {
-      clearInterval(timer);
       drawRect(right.rect);
-      return;
+      return true;
     }
     [ left, right ] = value.children;
     drawRect(left.rect);
-  }, options.delay);
+    return false;
+  }, partOptions.delay);
   return root;
 }
 
-function showDungeon(ctx, root, t, options) {
+function showDungeon(ctx, root, t) {
 
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = 'black';
@@ -67,10 +83,10 @@ function showDungeon(ctx, root, t, options) {
     ctx.fillRect(r.x * t, r.y * t, r.w * t, r.h * t);
   }
 
-  if (options.grid) {
+  if (dungeonOptions.grid) {
     // draw grid
     ctx.strokeStyle = 'green';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.75;
     for (let i = 0; i <= w; i++) {
       ctx.beginPath();
       ctx.moveTo(i * t, 0);
@@ -87,28 +103,22 @@ function showDungeon(ctx, root, t, options) {
     }
   }
 
-  if (options.spans) {
+  if (dungeonOptions.spans) {
     // draw spans
-    ctx.strokeStyle = 'blue';
-    ctx.lineWidth = 3;
-    for (let edge of d.corridors.keys()) {
-      let [a, b] = [...edge].map(r => r.bounds.center());
+    let spans = d.corridors.keys()[Symbol.iterator]();
+    tick(() => {
+      let { value, done } = spans.next();
+      if (done) return true;
+      let [a, b] = [...value].map(r => r.bounds.center());
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(a.x * t, a.y * t);
       ctx.lineTo(b.x * t, b.y * t);
       ctx.closePath();
       ctx.stroke();
-    }
-  }
-
-  if (options.ids) {
-    // draw identifiers
-    for (let room of d.rooms) {
-      let c = room.bounds.center();
-      ctx.fillStyle = 'white';
-      ctx.textAlign = 'center';
-      ctx.fillText(room.id, c.x * t, c.y * t);
-    }
+      return false;
+    }, dungeonOptions.delay);
   }
 
 }
@@ -131,8 +141,10 @@ window.addEventListener('load', () => {
   console.clear();
   random.seed(Math.random());
   let partCtx = getContext();
-  let root = showPartitions(partCtx, PART_OPTIONS);
+  let root = showPartitions(partCtx);
   let roomCtx = getContext();
-  showDungeon(roomCtx, root.clone(), T, DUNGEON_OPTIONS);
+  let dungeon = showDungeon(roomCtx, root.clone(), T);
+  let corCtx = getContext();
+  showCorridors(corCtx, dungeon, T);
   // document.body.style.position = 'relative';
 });
