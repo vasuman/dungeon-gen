@@ -1,4 +1,4 @@
-import * as random from 'webgame-lib/lib/random';
+import { random } from 'webgame-lib/lib/random';
 import { Rect } from 'webgame-lib/lib/math';
 import Partition from './partition.js';
 
@@ -43,10 +43,10 @@ export class Dungeon {
       if (picked) {
         let r = value.rect;
         if (r.w < CUTOFF_SIZE || r.h < CUTOFF_SIZE) continue;
-        let w = random.i(MIN_DIM, r.w - SPACE);
-        let h = random.i(MIN_DIM, r.h - SPACE);
-        let x = r.x + random.i(SPACE, r.w - w);
-        let y = r.y + random.i(SPACE, r.h - h);
+        let w = random.nextInt(MIN_DIM, r.w - SPACE);
+        let h = random.nextInt(MIN_DIM, r.h - SPACE);
+        let x = r.x + random.nextInt(SPACE, r.w - w);
+        let y = r.y + random.nextInt(SPACE, r.h - h);
         this.rooms.push(new Room(new Rect(x, y, w, h)));
       }
     }

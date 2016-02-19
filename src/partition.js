@@ -1,4 +1,4 @@
-import * as random from 'webgame-lib/lib/random';
+import { random } from 'webgame-lib/lib/random';
 
 export default class Partition {
 
@@ -34,8 +34,8 @@ export default class Partition {
   }
 
   split({ sqf, varf }, depth) {
-    let vert = random.bool(this.rect.w / this.rect.h, sqf);
-    let f = random.f(0.5 - varf, 0.5 + varf);
+    let vert = random.choice(this.rect.w / this.rect.h, sqf);
+    let f = random.nextFloat(0.5 - varf, 0.5 + varf);
     this.children = this.rect.split(f, vert).map(half => {
       return new Partition(half, { sqf, varf }, depth - 1);
     });

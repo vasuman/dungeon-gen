@@ -1,5 +1,5 @@
 import { Rect } from 'webgame-lib/lib/math';
-import * as random from 'webgame-lib/lib/random';
+import { random } from 'webgame-lib/lib/random';
 import Partition from './partition.js';
 import { Dungeon, splitRec } from './dungeon.js';
 
@@ -12,10 +12,10 @@ let partOptions = {
   varf: 0.2,
   sqf: 1,
   gap: 10,
-  delay: 50
+  delay: 100
 };
 
-let dungeonOptions = {
+let roomOptions = {
   grid: true,
   spans: true,
   delay: 1000
@@ -63,15 +63,15 @@ function showPartitions(ctx) {
   return root;
 }
 
-function showDungeon(ctx, root, t) {
+function showRooms(ctx, root, t) {
 
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = 'black';
+  ctx.fillStyle = random.color();
   for (let part of root) {
     part.rect.scale(1 / t).round();
   }
-  let w = ~~(W / t);
-  let h = ~~(H / t);
+  let w = Math.floor(W / t);
+  let h = Math.floor(H / t);
   let d = new Dungeon(w, h);
   d.buildRooms(root);
   d.buildCorridors();
@@ -83,7 +83,7 @@ function showDungeon(ctx, root, t) {
     ctx.fillRect(r.x * t, r.y * t, r.w * t, r.h * t);
   }
 
-  if (dungeonOptions.grid) {
+  if (roomOptions.grid) {
     // draw grid
     ctx.strokeStyle = 'green';
     ctx.lineWidth = 0.75;
@@ -103,7 +103,7 @@ function showDungeon(ctx, root, t) {
     }
   }
 
-  if (dungeonOptions.spans) {
+  if (roomOptions.spans) {
     // draw spans
     let spans = d.corridors.keys()[Symbol.iterator]();
     tick(() => {
@@ -118,19 +118,17 @@ function showDungeon(ctx, root, t) {
       ctx.closePath();
       ctx.stroke();
       return false;
-    }, dungeonOptions.delay);
+    }, roomOptions.delay);
   }
-
 }
 
-function getContext() {
+function getContext(hide) {
   let can = document.createElement('canvas');
   let ctx = can.getContext('2d');
   can.width = W;
   can.height = H;
   let container = document.createElement('div');
-  // container.style.position = 'absolute';
-  container.style.display = 'inline-block';
+  container.style.display = hide ? 'none' : 'inline-block';
   container.appendChild(can);
   document.body.appendChild(container);
   ctx.font = '18px Arial';
@@ -139,11 +137,10 @@ function getContext() {
 
 window.addEventListener('load', () => {
   console.clear();
-  random.seed(Math.random());
-  let partCtx = getContext();
+  let partCtx = getContext(true);
   let root = showPartitions(partCtx);
   let roomCtx = getContext();
-  let dungeon = showDungeon(roomCtx, root.clone(), T);
+  let dungeon = showRooms(roomCtx, root.clone(), T);
   let corCtx = getContext();
   showCorridors(corCtx, dungeon, T);
   // document.body.style.position = 'relative';
