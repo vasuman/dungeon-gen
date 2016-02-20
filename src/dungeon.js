@@ -2,13 +2,6 @@ import { random } from 'webgame-lib/lib/random';
 import { Rect } from 'webgame-lib/lib/math';
 import Partition from './partition.js';
 
-const SPACE = 2;
-
-const MIN_DIM = 5;
-const MAX_DIM = 16;
-
-const CUTOFF_SIZE = MIN_DIM + 2 * SPACE;
-
 class Room {
 
   constructor(bounds) {
@@ -21,11 +14,19 @@ class Room {
   }
 }
 
+const DEFAULT_OPTIONS = {
+  space: 2,
+  minDim: 5,
+  maxDim: 16,
+  pathSize: 2,
+}
+
 export class Dungeon {
 
-  constructor(w, h) {
+  constructor(w, h, options = DEFAULT_OPTIONS) {
     this.w = w;
     this.h = h;
+    this.options = options;
     this.grid = new Array(w * h);
     for (let i = 0; i < w * h; i++) {
       this.grid[i] = 0;
@@ -36,17 +37,18 @@ export class Dungeon {
     this.rooms = [];
     let gen = root.gen();
     let picked = false;
+    let cuttoff = this.options.minDim + this.options.space * 2;
     while (true) {
       let { value, done } = gen.next(picked);
       if (done) break;
       picked = value.leaf;
       if (picked) {
         let r = value.rect;
-        if (r.w < CUTOFF_SIZE || r.h < CUTOFF_SIZE) continue;
-        let w = random.nextInt(MIN_DIM, r.w - SPACE);
-        let h = random.nextInt(MIN_DIM, r.h - SPACE);
-        let x = r.x + random.nextInt(SPACE, r.w - w);
-        let y = r.y + random.nextInt(SPACE, r.h - h);
+        if (r.w < cuttoff || r.h < cuttoff) continue;
+        let w = random.nextInt(this.options.minDim, r.w - this.options.space);
+        let h = random.nextInt(this.options.minDim, r.h - this.options.space);
+        let x = r.x + random.nextInt(this.options.space, r.w - w);
+        let y = r.y + random.nextInt(this.options.space, r.h - h);
         this.rooms.push(new Room(new Rect(x, y, w, h)));
       }
     }
@@ -61,15 +63,26 @@ export class Dungeon {
   }
 
   connect(roomA, roomB) {
-    let v = roomA.bounds.center().sub(roomB.bounds.center());
-    // get split plane
-    let dim = (Math.abs(v.x) > Math.abs(v.y)) ? 'x' : 'y';
-    let orth = (dim === 'x') ? 'y' : 'x';
-    // projection
-    let [first, second] = [roomA, roomB].sort((a, b) => a[dim] - b[dim]);
-    // staggered or straight
-    // merge
-    // fill
+    let overlapY = roomA.bounds.overlap(roomB.bounds, true);
+    if (overlapY !== null && random.choice()) {
+      return 1;
+    }
+    let overlapX = roomA.bounds.overlap(roomB.bounds, false);
+    if (overlapX !== null && random.choice()) {
+      return 1;
+    }
+
+    if (random.choice()) {
+      // straight or staggered
+      let width = this.options.pathSize;
+      if (random.choice()) {
+        // straight
+      } else {
+        // staggered
+      }
+    } else {
+
+    }
     return 1;
   }
 
