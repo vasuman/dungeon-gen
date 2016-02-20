@@ -4,6 +4,8 @@ import { Screen } from 'webgame-lib/lib/screen';
 import Partition from './partition.js';
 import { Dungeon, splitRec } from './dungeon.js';
 
+import 'webgame-lib/src/screen.css';
+
 const W = 800;
 const H = 640;
 const T = 16;
@@ -57,7 +59,7 @@ function showPartitions(ctx, root) {
 
 function drawRooms(ctx, rooms, t) {
   for (let room of rooms) {
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = 'blue';
     let r = room.bounds;
     ctx.fillRect(r.x * t, r.y * t, r.w * t, r.h * t);
   }
@@ -67,7 +69,7 @@ function drawGrid(ctx, w, h, t) {
   // draw grid
   let x = Math.floor(w / t);
   let y = Math.floor(h / t);
-  ctx.strokeStyle = 'green';
+  ctx.strokeStyle = 'black';
   ctx.lineWidth = 0.75;
   for (let i = 0; i <= x; i++) {
     ctx.beginPath();
@@ -89,7 +91,7 @@ function showRooms(ctx, dungeon, t) {
 
   function drawSpan(edge) {
     let [a, b] = edge.map(r => r.bounds.center());
-    ctx.strokeStyle = 'blue';
+    ctx.strokeStyle = 'red';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(a.x * t, a.y * t);
@@ -98,7 +100,6 @@ function showRooms(ctx, dungeon, t) {
     ctx.stroke();
   }
 
-  ctx.clearRect(0, 0, W, H);
   drawRooms(ctx, dungeon.rooms, t);
 
   if (options.grid) {
@@ -158,6 +159,5 @@ window.addEventListener('load', () => {
   showRooms(getContext(), dungeon, T);
 
   showCorridors(getContext(), dungeon, T);
-  require('webgame-lib/src/screen.css');
 
 });
