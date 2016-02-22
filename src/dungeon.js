@@ -63,15 +63,19 @@ export class Dungeon {
   }
 
   connect(roomA, roomB) {
-    let overlapY = roomA.bounds.overlap(roomB.bounds, true);
-    if (overlapY !== null && random.choice()) {
-      return 1;
+    let bA = roomA.bounds;
+    let bB = roomB.bounds;
+    let oX = bA.overlap(bB, false);
+    let oY = bA.overlap(bB, true);
+    if (oX !== null) {
+      if (random.choice()) {
+        return 2;
+      }
+    } else if (oY !== null) {
+      if (random.choice()) {
+        return 2;
+      }
     }
-    let overlapX = roomA.bounds.overlap(roomB.bounds, false);
-    if (overlapX !== null && random.choice()) {
-      return 1;
-    }
-
     if (random.choice()) {
       // straight or staggered
       let width = this.options.pathSize;
@@ -81,7 +85,6 @@ export class Dungeon {
         // staggered
       }
     } else {
-
     }
     return 1;
   }
@@ -104,6 +107,7 @@ export class Dungeon {
 
   buildCorridors() {
     this.corridors = new Map();
+
     // find the minimum spanning tree
     let connected = new Set(this.rooms.slice(0, 1));
     let remaining = new Set(this.rooms.slice(1));
@@ -117,6 +121,7 @@ export class Dungeon {
         connected.add(nearest);
       }
     }
+
   }
 
   forEach(f) {

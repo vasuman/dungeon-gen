@@ -34,9 +34,9 @@ export default class Partition {
   }
 
   split({ sqf, varf }, depth) {
-    let vert = random.choice(this.rect.w / this.rect.h, sqf);
+    let axis = random.choice(this.rect.w / this.rect.h, sqf) ? 'y' : 'x';
     let f = random.nextFloat(0.5 - varf, 0.5 + varf);
-    this.children = this.rect.split(f, vert).map(half => {
+    this.children = this.rect.split(f, axis).map(half => {
       return new Partition(half, { sqf, varf }, depth - 1);
     });
   }
