@@ -53,11 +53,14 @@ export class Dungeon {
       }
     }
     for (let room of this.rooms) {
-      let b = room.bounds;
-      for (let i = b.x; i < b.x + b.w; i++) {
-        for (let j = b.y; j < b.y + b.h; j++) {
-          this.grid[j * this.w + i] = 1;
-        }
+      this._fillRect(room.bounds, val);
+    }
+  }
+
+  _fillGrid(b, v) {
+    for (let i = b.x; i < b.x + b.w; i++) {
+      for (let j = b.y; j < b.y + b.h; j++) {
+        this.grid[j * this.w + i] = v;
       }
     }
   }
@@ -65,8 +68,18 @@ export class Dungeon {
   connect(roomA, roomB) {
     let bA = roomA.bounds;
     let bB = roomB.bounds;
-    let oX = bA.overlap(bB, false);
-    let oY = bA.overlap(bB, true);
+    let cA = bA.center().round();
+    let cB = bB.center().round();
+    let [axis] = bA.seperationAxis(bB);
+    if (axis !== undefined && random.choice()) {
+      let overlap = bA.overlap(bB, axis);
+      // from cA to cB
+      let p = random.nextInt(...overlap);
+      let corr = new Rect();
+      if (axis === 'x') {
+      } else {
+      }
+    }
     if (oX !== null) {
       if (random.choice()) {
         return 2;
