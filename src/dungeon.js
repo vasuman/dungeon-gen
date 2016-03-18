@@ -1,5 +1,5 @@
 import { random } from 'webgame-lib/lib/random';
-import { Rect } from 'webgame-lib/lib/math';
+import { Rect } from 'webgame-lib/lib/geom';
 import Partition from './partition.js';
 
 class Room {
@@ -53,7 +53,7 @@ export class Dungeon {
       }
     }
     for (let room of this.rooms) {
-      this._fillRect(room.bounds, val);
+      this._fillGrid(room.bounds, 1);
     }
   }
 
@@ -68,26 +68,16 @@ export class Dungeon {
   connect(roomA, roomB) {
     let bA = roomA.bounds;
     let bB = roomB.bounds;
-    let cA = bA.center().round();
-    let cB = bB.center().round();
     let [axis] = bA.seperationAxis(bB);
     if (axis !== undefined && random.choice()) {
+      let [comp, div] = (axis === 'y') ? ['x', 'h'] : ['y', 'w'];
       let overlap = bA.overlap(bB, axis);
-      // from cA to cB
+      console.log(overlap);
       let p = random.nextInt(...overlap);
       let corr = new Rect();
-      if (axis === 'x') {
-      } else {
-      }
-    }
-    if (oX !== null) {
-      if (random.choice()) {
-        return 2;
-      }
-    } else if (oY !== null) {
-      if (random.choice()) {
-        return 2;
-      }
+      let [min, max] = [bA, bB].sort((a, b) => {
+        return a[axis] - b[axis];
+      });
     }
     if (random.choice()) {
       // straight or staggered

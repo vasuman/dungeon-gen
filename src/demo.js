@@ -1,10 +1,10 @@
-import { Rect } from 'webgame-lib/lib/math';
+import { Rect } from 'webgame-lib/lib/geom';
 import { random } from 'webgame-lib/lib/random';
 import { Screen } from 'webgame-lib/lib/screen';
 import Partition from './partition.js';
 import { Dungeon, splitRec } from './dungeon.js';
 
-import 'webgame-lib/src/screen.css';
+import 'webgame-lib/css/screen.css';
 
 const W = 800;
 const H = 640;
@@ -129,10 +129,11 @@ function showCorridors(ctx, dungeon, t) {
   });
 }
 
-function getContext(hide) {
+function getContext(hide = false) {
   let screen = new Screen(W, H);
+  let container = document.getElementById('container');
   if (!hide) {
-    document.body.appendChild(screen.container);
+    container.appendChild(screen.container);
   }
   let ctx = screen.can.getContext('2d');
   return ctx;
@@ -144,7 +145,7 @@ window.addEventListener('load', () => {
   let bounds = new Rect(0, 0, W, H);
   let root = new Partition(bounds, options, options.depth);
 
-  showPartitions(getContext(false), root.clone());
+  showPartitions(getContext(), root.clone());
 
   for (let part of root) {
     part.rect.scale(1 / T).round();
