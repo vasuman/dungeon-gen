@@ -1,5 +1,5 @@
 import { random } from 'webgame-lib/lib/random';
-import { Rect } from 'webgame-lib/lib/geom';
+import { Rect, complement, dimension, Vec } from 'webgame-lib/lib/geom';
 import Partition from './partition.js';
 
 class Room {
@@ -7,12 +7,15 @@ class Room {
   constructor(bounds) {
     this.id = random.letters(3);
     this.bounds = bounds;
+    this.doors = [];
   }
 
   dist(other) {
     return this.bounds.center().blockDist(other.bounds.center());
   }
 }
+
+const STAG_DIST = 4;
 
 const DEFAULT_OPTIONS = {
   space: 2,
@@ -65,31 +68,57 @@ export class Dungeon {
     }
   }
 
-  connect(roomA, roomB) {
-    let bA = roomA.bounds;
-    let bB = roomB.bounds;
-    let [axis] = bA.seperationAxis(bB);
-    if (axis !== undefined && random.choice()) {
-      let [comp, div] = (axis === 'y') ? ['x', 'h'] : ['y', 'w'];
-      let overlap = bA.overlap(bB, axis);
-      console.log(overlap);
-      let p = random.nextInt(...overlap);
-      let corr = new Rect();
-      let [min, max] = [bA, bB].sort((a, b) => {
-        return a[axis] - b[axis];
-      });
+  makeCorridor(roomA, roomB) {
+    let bA = roomA.bounds.clone().shrink(2);
+    let bB = roomB.bounds.clone().shrink(2);
+
+    function roomOf(b) {
+      return b === bA ? roomA : roomB;
     }
-    if (random.choice()) {
-      // straight or staggered
-      let width = this.options.pathSize;
-      if (random.choice()) {
+
+    let axes = bA.seperationAxis(bB);
+    let from = new Vec();
+    let to = new Vec();
+    let min, max, segments;
+    if (axes.length === 1) {
+      let [axis] = axes;
+      let comp = complement(axis);
+      let aD = dimension(axis);
+      let cD = dimension(comp);
+      [min, max] = bA.order(bB, axis);
+      from[axis] = min[axis] + min[aD];
+      to[axis] = max[axis] - 1;
+      let overlap = bA.overlap(bB, comp);
+      if (random.choice() || to[axis] - from[axis] < STAG_DIST) {
         // straight
+        let at = random.nextInt(...overlap);
+        from[comp] = to[comp] = at;
+        segments = [[from, to]];
       } else {
-        // staggered
+        // staggard
+        from[comp] = random.nextInt(min[comp], min[comp] + min[cD] - 1);
+        to[comp] = random.nextInt(max[comp], max[comp] + max[cD] - 1);
+        let cliff = random.nextInt(from[axis] + 1, to[axis] - 1);
+        let x = new Vec();
+        let y = new Vec();
+        x[comp] = from[comp];
+        y[comp] = to[comp];
+        y[axis] = x[axis] = cliff;
+        segments = [
+          [from, x],
+          [x, y],
+          [y, to]
+        ];
       }
     } else {
+      // right angled
+      // FIXME
+      let axis = random.select(axes);
+      console.log('right');
     }
-    return 1;
+    roomOf(min).doors.push(from);
+    roomOf(max).doors.push(to);
+    return {segments};
   }
 
   findNearest(connected, remaining) {
@@ -110,7 +139,6 @@ export class Dungeon {
 
   buildCorridors() {
     this.corridors = new Map();
-
     // find the minimum spanning tree
     let connected = new Set(this.rooms.slice(0, 1));
     let remaining = new Set(this.rooms.slice(1));
@@ -118,13 +146,12 @@ export class Dungeon {
       let [room, nearest] = this.findNearest(connected, remaining);
       let pair = new Set([room, nearest]);
       if (!this.corridors.has(pair)) {
-        let cor = this.connect(room, nearest);
+        let cor = this.makeCorridor(room, nearest);
         this.corridors.set(pair, cor);
         remaining.delete(nearest);
         connected.add(nearest);
       }
     }
-
   }
 
   forEach(f) {
@@ -136,4 +163,3 @@ export class Dungeon {
   }
 
 }
-

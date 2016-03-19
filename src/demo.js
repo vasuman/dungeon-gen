@@ -17,7 +17,7 @@ let options = {
   gap: 10,
   partDelay: 200,
   spanDelay: 1000,
-  fillDelay: 50,
+  fillDelay: 100,
   grid: true,
   spans: true,
 };
@@ -33,34 +33,32 @@ function tick(f, secs) {
   }, secs);
 }
 
-function showPartitions(ctx, root) {
+function drawRect(ctx, rect) {
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+}
 
-  function drawRect(rect) {
-    ctx.fillStyle = random.color();
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-  }
+function drawCircle(ctx, {x, y}, r, t) {
+  ctx.beginPath();
+  ctx.arc(x * t, y * t, r, 0, 2 * Math.PI);
+  ctx.closePath();
+  ctx.fill();
+}
 
-  ctx.fillStyle = 'black';
-  ctx.fillRect(0, 0, W, H);
-  let gen = root.gen(false);
-  let left, right;
-
-  tick(() => {
-    let { value, done } = gen.next(false);
-    if (done) {
-      drawRect(right.rect);
-      return true;
-    }
-    [ left, right ] = value.children;
-    drawRect(left.rect);
-    return false;
-  }, options.partDelay);
+function drawLine(ctx, {x: sX, y: sY}, {x: dX, y: dY}, t) {
+  ctx.beginPath();
+  ctx.moveTo(sX * t, sY * t);
+  ctx.lineTo(dX * t, dY * t);
+  ctx.closePath();
+  ctx.stroke();
 }
 
 function drawRooms(ctx, rooms, t) {
   for (let room of rooms) {
-    ctx.fillStyle = 'blue';
     let r = room.bounds;
+    ctx.fillStyle = 'green';
+    ctx.fillRect(r.x * t, r.y * t, r.w * t, r.h * t);
+    r = r.clone().shrink(2);
+    ctx.fillStyle = 'blue';
     ctx.fillRect(r.x * t, r.y * t, r.w * t, r.h * t);
   }
 }
@@ -87,17 +85,33 @@ function drawGrid(ctx, w, h, t) {
   }
 }
 
-function showRooms(ctx, dungeon, t) {
+function showPartitions(ctx, root) {
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, W, H);
+  let gen = root.gen(false);
+  let left, right;
+  tick(() => {
+    ctx.fillStyle = random.color();
+    let { value, done } = gen.next(false);
+    if (done) {
+      drawRect(ctx, right.rect);
+      return true;
+    }
+    [ left, right ] = value.children;
+    drawRect(ctx, left.rect);
+    return false;
+  }, options.partDelay);
+}
 
+function showRooms(ctx, dungeon, t) {
   function drawSpan(edge) {
     let [a, b] = edge.map(r => r.bounds.center());
     ctx.strokeStyle = 'red';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(a.x * t, a.y * t);
-    ctx.lineTo(b.x * t, b.y * t);
-    ctx.closePath();
-    ctx.stroke();
+    ctx.fillStyle = 'red';
+    ctx.lineWidth = 4;
+    drawLine(ctx, a, b, t);
+    drawCircle(ctx, a, 8, t);
+    drawCircle(ctx, b, 8, t);
   }
 
   drawRooms(ctx, dungeon.rooms, t);
@@ -110,30 +124,68 @@ function showRooms(ctx, dungeon, t) {
     // draw spans
     let spans = dungeon.corridors.keys()[Symbol.iterator]();
     tick(() => {
-      let { value, done } = spans.next();
+      let { value: span, done } = spans.next();
       if (done) return true;
-      drawSpan([...value]);
+      drawSpan([...span]);
       return false;
     }, options.spanDelay);
   }
 }
 
 function showCorridors(ctx, dungeon, t) {
+  function getBlock(segments, idx) {
+    // FIXME!!
+    if (!segments) {
+      return null;
+    }
+    for (let [a, b] of segments) {
+      let length = a.blockDist(b);
+      if (idx <= length) {
+        return b.interpolate(idx / length, a).round();
+      }
+      idx -= length;
+    }
+    return null;
+  }
+
   drawRooms(ctx, dungeon.rooms, t);
 
   if (options.grid) {
     drawGrid(ctx, W, H, t);
   }
 
+  let traces = [];
+  for (let corridor of dungeon.corridors.values()) {
+    traces.push({
+      idx: 0,
+      segments: corridor.segments,
+      done: false
+    });
+  }
+
   tick(() => {
-  });
+    traces.forEach(trace => {
+      if (trace.done) {
+        return;
+      }
+      let block = getBlock(trace.segments, trace.idx);
+      if (block === null) {
+        trace.done = true;
+        return;
+      }
+      // draw block
+      ctx.fillStyle = 'red';
+      ctx.fillRect(block.x * t + 1, block.y * t + 1, t - 1, t - 1);
+      trace.idx += 1;
+    });
+    return traces.map(x => x.done).reduce((a, b) => a && b);
+  }, options.fillDelay);
 }
 
 function getContext(hide = false) {
   let screen = new Screen(W, H);
-  let container = document.getElementById('container');
   if (!hide) {
-    container.appendChild(screen.container);
+    document.body.appendChild(screen.container);
   }
   let ctx = screen.can.getContext('2d');
   return ctx;
@@ -145,7 +197,7 @@ window.addEventListener('load', () => {
   let bounds = new Rect(0, 0, W, H);
   let root = new Partition(bounds, options, options.depth);
 
-  showPartitions(getContext(), root.clone());
+  // showPartitions(getContext(), root.clone());
 
   for (let part of root) {
     part.rect.scale(1 / T).round();
