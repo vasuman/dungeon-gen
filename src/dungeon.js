@@ -1,6 +1,5 @@
 import { random } from 'webgame-lib/lib/random';
 import { Rect, complement, dimension, Vec } from 'webgame-lib/lib/geom';
-import Partition from './partition.js';
 
 class Room {
 
@@ -21,7 +20,7 @@ const DEFAULT_OPTIONS = {
   space: 2,
   minDim: 5,
   maxDim: 16,
-  pathSize: 2,
+  pathSize: 2
 }
 
 export class Dungeon {
@@ -41,12 +40,11 @@ export class Dungeon {
     let gen = root.gen();
     let picked = false;
     let cuttoff = this.options.minDim + this.options.space * 2;
-    while (true) {
-      let { value, done } = gen.next(picked);
-      if (done) break;
-      picked = value.leaf;
+    let { value: part, done } = gen.next(picked);
+    while (!done) {
+      picked = part.leaf;
       if (picked) {
-        let r = value.rect;
+        let r = part.rect;
         if (r.w < cuttoff || r.h < cuttoff) continue;
         let w = random.nextInt(this.options.minDim, r.w - this.options.space);
         let h = random.nextInt(this.options.minDim, r.h - this.options.space);
@@ -54,6 +52,7 @@ export class Dungeon {
         let y = r.y + random.nextInt(this.options.space, r.h - h);
         this.rooms.push(new Room(new Rect(x, y, w, h)));
       }
+      ({ value: part, done } = gen.next(picked));
     }
     for (let room of this.rooms) {
       this._fillGrid(room.bounds, 1);
@@ -113,8 +112,7 @@ export class Dungeon {
     } else {
       // right angled
       // FIXME
-      let axis = random.select(axes);
-      console.log('right');
+      random.choice();
     }
     roomOf(min).doors.push(from);
     roomOf(max).doors.push(to);

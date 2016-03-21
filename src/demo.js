@@ -1,8 +1,10 @@
+/* eslint-env browser */
+
 import { Rect } from 'webgame-lib/lib/geom';
 import { random } from 'webgame-lib/lib/random';
 import { Screen } from 'webgame-lib/lib/screen';
 import Partition from './partition.js';
-import { Dungeon, splitRec } from './dungeon.js';
+import { Dungeon } from './dungeon.js';
 
 import 'webgame-lib/css/screen.css';
 
@@ -19,7 +21,7 @@ let options = {
   spanDelay: 1000,
   fillDelay: 100,
   grid: true,
-  spans: true,
+  spans: true
 };
 
 let i = 0;
@@ -192,12 +194,12 @@ function getContext(hide = false) {
 }
 
 window.addEventListener('load', () => {
-  console.clear();
+  console.clear(); // eslint-disable-line no-console
 
   let bounds = new Rect(0, 0, W, H);
   let root = new Partition(bounds, options, options.depth);
 
-  // showPartitions(getContext(), root.clone());
+  showPartitions(getContext(), root.clone());
 
   for (let part of root) {
     part.rect.scale(1 / T).round();
