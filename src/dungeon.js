@@ -38,21 +38,25 @@ export class Dungeon {
   buildRooms(root) {
     this.rooms = [];
     let gen = root.gen();
-    let picked = false;
     let cuttoff = this.options.minDim + this.options.space * 2;
-    let { value: part, done } = gen.next(picked);
-    while (!done) {
-      picked = part.leaf;
-      if (picked) {
-        let r = part.rect;
-        if (r.w < cuttoff || r.h < cuttoff) continue;
-        let w = random.nextInt(this.options.minDim, r.w - this.options.space);
-        let h = random.nextInt(this.options.minDim, r.h - this.options.space);
-        let x = r.x + random.nextInt(this.options.space, r.w - w);
-        let y = r.y + random.nextInt(this.options.space, r.h - h);
-        this.rooms.push(new Room(new Rect(x, y, w, h)));
+    let picked = false;
+    let finished = false;
+    while (!finished) {
+      let next = gen.next(picked);
+      let part = next.value;
+      finished = next.done;
+      if (!finished) {
+        picked = part.leaf;
+        if (picked) {
+          let r = part.rect;
+          if (r.w < cuttoff || r.h < cuttoff) continue;
+          let w = random.nextInt(this.options.minDim, r.w - this.options.space);
+          let h = random.nextInt(this.options.minDim, r.h - this.options.space);
+          let x = r.x + random.nextInt(this.options.space, r.w - w);
+          let y = r.y + random.nextInt(this.options.space, r.h - h);
+          this.rooms.push(new Room(new Rect(x, y, w, h)));
+        }
       }
-      ({ value: part, done } = gen.next(picked));
     }
     for (let room of this.rooms) {
       this._fillGrid(room.bounds, 1);
@@ -97,7 +101,7 @@ export class Dungeon {
         // staggard
         from[comp] = random.nextInt(min[comp], min[comp] + min[cD] - 1);
         to[comp] = random.nextInt(max[comp], max[comp] + max[cD] - 1);
-        let cliff = random.nextInt(from[axis] + 1, to[axis] - 1);
+        let cliff = random.nextInt(from[axis] + 2, to[axis] - 2);
         let x = new Vec();
         let y = new Vec();
         x[comp] = from[comp];
@@ -112,7 +116,7 @@ export class Dungeon {
     } else {
       // right angled
       // FIXME
-      random.choice();
+      let axis = random.choice(axes);
     }
     roomOf(min).doors.push(from);
     roomOf(max).doors.push(to);
