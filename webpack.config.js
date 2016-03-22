@@ -1,8 +1,8 @@
 module.exports = {
   entry: ['babel-polyfill', './src/demo.js'],
   output: {
-    path: __dirname + '/build',
-    filename: 'out.js'
+    path: __dirname,
+    filename: 'build.js'
   },
   module: {
     loaders: [{
