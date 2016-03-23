@@ -14,18 +14,19 @@ class Room {
   }
 }
 
-const STAG_DIST = 4;
+const CLIFF_GAP = 2;
+const MIN_STAG_LEN = 4;
 
-const DEFAULT_OPTIONS = {
+const dungeonDefaults = {
   space: 2,
   minDim: 5,
   maxDim: 16,
-  pathSize: 2
+  stagBias: 1
 }
 
 export class Dungeon {
 
-  constructor(w, h, options = DEFAULT_OPTIONS) {
+  constructor(w, h, options = dungeonDefaults) {
     this.w = w;
     this.h = h;
     this.options = options;
@@ -91,17 +92,23 @@ export class Dungeon {
       [min, max] = bA.order(bB, axis);
       from[axis] = min[axis] + min[aD];
       to[axis] = max[axis] - 1;
-      let overlap = bA.overlap(bB, comp);
-      if (random.choice() || to[axis] - from[axis] < STAG_DIST) {
+      let [start, end] = bA.overlap(bB, comp);
+      console.log(start, end, min[cD] + max[cD]);
+      // FIXME
+      let hasStagLen = max[cD] - min[cD] - end + start > MIN_STAG_LEN + 2;
+      let hasCliffGap = to[axis] - from[axis] >= 2 * CLIFF_GAP;
+      if (!hasStagLen || !hasCliffGap || random.choice()) {
         // straight
-        let at = random.nextInt(...overlap);
+        let at = random.nextInt(start, end);
         from[comp] = to[comp] = at;
         segments = [[from, to]];
       } else {
         // staggard
-        from[comp] = random.nextInt(min[comp], min[comp] + min[cD] - 1);
-        to[comp] = random.nextInt(max[comp], max[comp] + max[cD] - 1);
-        let cliff = random.nextInt(from[axis] + 2, to[axis] - 2);
+        do {
+          from[comp] = random.nextInt(min[comp], min[comp] + min[cD] - 1);
+          to[comp] = random.nextInt(max[comp], max[comp] + max[cD] - 1);
+        } while (Math.abs(from[comp] - to[comp]) < MIN_STAG_LEN);
+        let cliff = random.nextInt(from[axis] + CLIFF_GAP, to[axis] - CLIFF_GAP);
         let x = new Vec();
         let y = new Vec();
         x[comp] = from[comp];
@@ -116,7 +123,6 @@ export class Dungeon {
     } else {
       // right angled
       // FIXME
-      let axis = random.choice(axes);
     }
     roomOf(min).doors.push(from);
     roomOf(max).doors.push(to);

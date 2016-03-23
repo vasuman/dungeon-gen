@@ -8,12 +8,11 @@ import { Dungeon } from './dungeon.js';
 
 import 'webgame-lib/css/screen.css';
 
-const W = 800;
-const H = 640;
-const T = 16;
-
 const options = {
-  depth: 3,
+  width: 800,
+  height: 600,
+  tile: 8,
+  depth: 5,
   varf: 0.2,
   sqf: 1,
   gap: 10,
@@ -22,6 +21,13 @@ const options = {
   fillDelay: 100,
   grid: true,
   spans: true
+};
+
+const dungeonOptions = {
+  space: 2,
+  minDim: 4,
+  maxDim: 16,
+  stagBias: 1
 };
 
 let dungeon, bsp;
@@ -64,41 +70,41 @@ function drawLine(ctx, {x: sX, y: sY}, {x: dX, y: dY}, scl = 1) {
 
 function drawSpan(ctx, edge) {
   let [a, b] = edge.map(r => r.bounds.center());
-  ctx.strokeStyle = 'red';
-  ctx.fillStyle = 'red';
+  ctx.strokeStyle = 'orangered';
+  ctx.fillStyle = 'orangered';
   ctx.lineWidth = 4;
-  drawLine(ctx, a, b, T);
-  drawCircle(ctx, a, 8, T);
-  drawCircle(ctx, b, 8, T);
+  drawLine(ctx, a, b, options.tile);
+  drawCircle(ctx, a, 8, options.tile);
+  drawCircle(ctx, b, 8, options.tile);
 }
 
 function drawRooms(ctx, rooms) {
   for (let room of rooms) {
     let r = room.bounds;
     ctx.fillStyle = 'green';
-    drawRect(ctx, r, T);
+    drawRect(ctx, r, options.tile);
     r = r.clone().shrink(2);
-    ctx.fillStyle = 'blue';
-    drawRect(ctx, r, T);
+    ctx.fillStyle = 'lightgreen';
+    drawRect(ctx, r, options.tile);
   }
 }
 
 function drawGrid(ctx) {
-  let x = Math.floor(W / T);
-  let y = Math.floor(H / T);
+  let x = Math.floor(options.width / options.tile);
+  let y = Math.floor(options.height / options.tile);
   ctx.strokeStyle = 'black';
   ctx.lineWidth = 0.75;
   for (let i = 0; i <= x; i++) {
     ctx.beginPath();
-    ctx.moveTo(i * T, 0);
-    ctx.lineTo(i * T, H);
+    ctx.moveTo(i * options.tile, 0);
+    ctx.lineTo(i * options.tile, options.height);
     ctx.closePath();
     ctx.stroke();
   }
   for (let j = 0; j <= y; j++) {
     ctx.beginPath();
-    ctx.moveTo(0, j * T);
-    ctx.lineTo(W, j * T);
+    ctx.moveTo(0, j * options.tile);
+    ctx.lineTo(options.width, j * options.tile);
     ctx.closePath();
     ctx.stroke();
   }
@@ -106,7 +112,7 @@ function drawGrid(ctx) {
 
 function showPartitions(ctx) {
   ctx.fillStyle = 'black';
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0, 0, options.width, options.height);
   let gen = bsp.gen(false);
   let left, right;
   tick(() => {
@@ -123,7 +129,7 @@ function showPartitions(ctx) {
 }
 
 function showRooms(ctx) {
-  ctx.clearRect(0, 0, W, H);
+  ctx.clearRect(0, 0, options.width, options.height);
   drawRooms(ctx, dungeon.rooms);
 
   if (options.grid) {
@@ -143,7 +149,7 @@ function showRooms(ctx) {
 }
 
 function showCorridors(ctx) {
-  ctx.clearRect(0, 0, W, H);
+  ctx.clearRect(0, 0, options.width, options.height);
 
   function getBlock(segments, idx) {
     // FIXME!!
@@ -187,7 +193,9 @@ function showCorridors(ctx) {
       }
       // draw block
       ctx.fillStyle = 'red';
-      ctx.fillRect(block.x * T + 1, block.y * T + 1, T - 1, T - 1);
+      ctx.fillRect(block.x * options.tile + 1,
+                   block.y * options.tile + 1,
+                   options.tile - 1, options.tile - 1);
       trace.idx += 1;
     });
     return traces.map(x => x.done).reduce((a, b) => a && b);
@@ -204,15 +212,15 @@ window.addEventListener('load', () => {
   }
 
   function init() {
-    let bounds = new Rect(0, 0, W, H);
+    let bounds = new Rect(0, 0, options.width, options.height);
     let root = new Partition(bounds, options, options.depth);
     bsp = root.clone();
     for (let part of root) {
-      part.rect.scale(1 / T).round();
+      part.rect.scale(1 / options.tile).round();
     }
-    let w = Math.floor(W / T);
-    let h = Math.floor(H / T);
-    dungeon = new Dungeon(w, h);
+    let w = Math.floor(options.width / options.tile);
+    let h = Math.floor(options.height / options.tile);
+    dungeon = new Dungeon(w, h, dungeonOptions);
     dungeon.buildRooms(root);
     dungeon.buildCorridors();
   }
@@ -230,7 +238,7 @@ window.addEventListener('load', () => {
   }
 
   function getScreen(container) {
-    let screen = new Screen(W, H);
+    let screen = new Screen(options.width, options.height);
     container.appendChild(screen.container);
     container.addEventListener('click', redraw);
     return screen;
