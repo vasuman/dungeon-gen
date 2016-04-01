@@ -20,19 +20,33 @@ const options = {
   spanDelay: 400,
   fillDelay: 100,
   grid: true,
+  minDim: 4,
+  maxDim: 16,
+  stagBias: 1,
   spans: true
 };
 
-const dungeonOptions = {
-  space: 2,
-  minDim: 4,
-  maxDim: 16,
-  stagBias: 1
-};
+class Demo {
+  constructor(screen, func) {
+    this.screen = screen;
+    this.func = func;
+  }
+
+  render() {
+    let ctx = this.screen.can.getContext('2d');
+    this.screen.clear();
+    this.func(ctx);
+  }
+}
 
 let dungeon, bsp;
 
 let i = 0;
+
+function $(sel) {
+  let ret = document.querySelectorAll(sel);
+  return sel.startsWith('#') ? ret[0] : Array.from(ret);
+}
 
 function tick(f, secs) {
   let cur = i;
@@ -70,8 +84,8 @@ function drawLine(ctx, {x: sX, y: sY}, {x: dX, y: dY}, scl = 1) {
 
 function drawSpan(ctx, edge) {
   let [a, b] = edge.map(r => r.bounds.center());
-  ctx.strokeStyle = 'orangered';
-  ctx.fillStyle = 'orangered';
+  ctx.strokeStyle = 'blue';
+  ctx.fillStyle = 'blue';
   ctx.lineWidth = 4;
   drawLine(ctx, a, b, options.tile);
   drawCircle(ctx, a, 8, options.tile);
@@ -93,7 +107,7 @@ function drawGrid(ctx) {
   let x = Math.floor(options.width / options.tile);
   let y = Math.floor(options.height / options.tile);
   ctx.strokeStyle = 'black';
-  ctx.lineWidth = 0.75;
+  ctx.lineWidth = 0.5;
   for (let i = 0; i <= x; i++) {
     ctx.beginPath();
     ctx.moveTo(i * options.tile, 0);
@@ -111,7 +125,7 @@ function drawGrid(ctx) {
 }
 
 function showPartitions(ctx) {
-  ctx.fillStyle = 'black';
+  ctx.fillStyle = 'black'
   ctx.fillRect(0, 0, options.width, options.height);
   let gen = bsp.gen(false);
   let left, right;
@@ -129,7 +143,14 @@ function showPartitions(ctx) {
 }
 
 function showRooms(ctx) {
-  ctx.clearRect(0, 0, options.width, options.height);
+  drawRooms(ctx, dungeon.rooms);
+
+  if (options.grid) {
+    drawGrid(ctx);
+  }
+}
+
+function showSpans(ctx) {
   drawRooms(ctx, dungeon.rooms);
 
   if (options.grid) {
@@ -149,8 +170,6 @@ function showRooms(ctx) {
 }
 
 function showCorridors(ctx) {
-  ctx.clearRect(0, 0, options.width, options.height);
-
   function getBlock(segments, idx) {
     // FIXME!!
     if (!segments) {
@@ -202,40 +221,9 @@ function showCorridors(ctx) {
   }, options.fillDelay);
 }
 
+/* eslint-disable no-console */
 window.addEventListener('load', () => {
-  console.clear(); // eslint-disable-line no-console
-
-  let partScreen, roomScreen, corScreen;
-
-  function $(id) {
-    return document.getElementById(id);
-  }
-
-  function init() {
-    let bounds = new Rect(0, 0, options.width, options.height);
-    let root = new Partition(bounds, options, options.depth);
-    bsp = root.clone();
-    for (let part of root) {
-      part.rect.scale(1 / options.tile).round();
-    }
-    let w = Math.floor(options.width / options.tile);
-    let h = Math.floor(options.height / options.tile);
-    dungeon = new Dungeon(w, h, dungeonOptions);
-    dungeon.buildRooms(root);
-    dungeon.buildCorridors();
-  }
-
-  function redraw() {
-    function render(screen, func) {
-      let ctx = screen.can.getContext('2d');
-      func(ctx);
-    }
-
-    cancel();
-    render(partScreen, showPartitions);
-    render(roomScreen, showRooms);
-    render(corScreen, showCorridors);
-  }
+  console.clear();
 
   function getScreen(container) {
     let screen = new Screen(options.width, options.height);
@@ -244,26 +232,64 @@ window.addEventListener('load', () => {
     return screen;
   }
 
+  let demos = [
+    new Demo(getScreen($('#partitions')), showPartitions),
+    new Demo(getScreen($('#rooms')), showRooms),
+    new Demo(getScreen($('#spans')), showSpans),
+    new Demo(getScreen($('#corridors')), showCorridors)
+  ];
+
+  function redraw() {
+    cancel();
+    for (let demo of demos) {
+      demo.render();
+    }
+  }
+
+  function init() {
+    if (window.matchMedia('(max-device-width: 500px)').matches) {
+      Object.assign(options, {
+        tile: 16,
+        depth: 3
+      });
+    } else {
+      Object.assign(options, {
+        tile: 8,
+        depth: 4
+      });
+    }
+    let bounds = new Rect(0, 0, options.width, options.height);
+    let root = new Partition(bounds, options, options.depth);
+    bsp = root.clone();
+    for (let part of root) {
+      part.rect.scale(1 / options.tile).round();
+    }
+    let w = Math.floor(options.width / options.tile);
+    let h = Math.floor(options.height / options.tile);
+    dungeon = new Dungeon(w, h, options);
+    dungeon.buildRooms(root);
+    dungeon.buildCorridors();
+  }
+
+
   function setupControls() {
-    $('gen-button').addEventListener('click', () => {
+    $('.gen-button').forEach(btn => btn.addEventListener('click', () => {
       init();
       redraw();
-    });
-    let sqSlide = $('squariness-slider');
+    }));
+    let sqSlide = $('#squariness-slider');
     sqSlide.addEventListener('change', () => {
       options.sqf = parseFloat(sqSlide.value);
+      console.log(options.sqf);
     });
-    let spvSlide = $('split-var-slider');
+    let spvSlide = $('#split-var-slider');
     spvSlide.addEventListener('change', () => {
       options.varf = parseFloat(spvSlide.value);
+      console.log(options.varf);
     });
   }
 
-  init();
-  partScreen = getScreen($('partitions'));
-  roomScreen = getScreen($('rooms'));
-  corScreen = getScreen($('corridors'));
   setupControls();
+  init();
   redraw();
-
 });

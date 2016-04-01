@@ -16,20 +16,16 @@ class Room {
 
 const CLIFF_GAP = 2;
 const MIN_STAG_LEN = 4;
-
-const dungeonDefaults = {
-  space: 2,
-  minDim: 5,
-  maxDim: 16,
-  stagBias: 1
-}
+const ROOM_SPACE = 2;
 
 export class Dungeon {
 
-  constructor(w, h, options = dungeonDefaults) {
+  constructor(w, h, { minDim, maxDim, stagBias }) {
     this.w = w;
     this.h = h;
-    this.options = options;
+    this.minDim = minDim;
+    this.maxDim = maxDim;
+    this.stagBias = stagBias;
     this.grid = new Array(w * h);
     for (let i = 0; i < w * h; i++) {
       this.grid[i] = 0;
@@ -39,7 +35,7 @@ export class Dungeon {
   buildRooms(root) {
     this.rooms = [];
     let gen = root.gen();
-    let cuttoff = this.options.minDim + this.options.space * 2;
+    let cuttoff = this.minDim + ROOM_SPACE * 2;
     let picked = false;
     let finished = false;
     while (!finished) {
@@ -51,10 +47,10 @@ export class Dungeon {
         if (picked) {
           let r = part.rect;
           if (r.w < cuttoff || r.h < cuttoff) continue;
-          let w = random.nextInt(this.options.minDim, r.w - this.options.space);
-          let h = random.nextInt(this.options.minDim, r.h - this.options.space);
-          let x = r.x + random.nextInt(this.options.space, r.w - w);
-          let y = r.y + random.nextInt(this.options.space, r.h - h);
+          let w = random.nextInt(this.minDim, r.w - ROOM_SPACE);
+          let h = random.nextInt(this.minDim, r.h - ROOM_SPACE);
+          let x = r.x + random.nextInt(ROOM_SPACE, r.w - w);
+          let y = r.y + random.nextInt(ROOM_SPACE, r.h - h);
           this.rooms.push(new Room(new Rect(x, y, w, h)));
         }
       }
@@ -92,14 +88,12 @@ export class Dungeon {
       [min, max] = bA.order(bB, axis);
       from[axis] = min[axis] + min[aD];
       to[axis] = max[axis] - 1;
-      let [start, end] = bA.overlap(bB, comp);
-      console.log(start, end, min[cD] + max[cD]);
-      // FIXME
-      let hasStagLen = max[cD] - min[cD] - end + start > MIN_STAG_LEN + 2;
+      let hasStagLen = (max[comp] + max[cD]) - min[comp] > MIN_STAG_LEN;
       let hasCliffGap = to[axis] - from[axis] >= 2 * CLIFF_GAP;
       if (!hasStagLen || !hasCliffGap || random.choice()) {
         // straight
-        let at = random.nextInt(start, end);
+        let overlap = bA.overlap(bB, comp);
+        let at = random.nextInt(...overlap);
         from[comp] = to[comp] = at;
         segments = [[from, to]];
       } else {
@@ -123,6 +117,7 @@ export class Dungeon {
     } else {
       // right angled
       // FIXME
+      let axis = random.select(axes);
     }
     roomOf(min).doors.push(from);
     roomOf(max).doors.push(to);
