@@ -2,17 +2,13 @@
 
 import { Rect } from 'webgame-lib/lib/geom';
 import { random } from 'webgame-lib/lib/random';
-import { Screen } from 'webgame-lib/lib/screen';
+import Screen from 'webgame-lib/lib/screen';
 import Partition from './partition.js';
 import { Dungeon } from './dungeon.js';
-
-import 'webgame-lib/css/screen.css';
 
 const options = {
   width: 800,
   height: 600,
-  tile: 8,
-  depth: 5,
   varf: 0.2,
   sqf: 1,
   gap: 10,
@@ -20,9 +16,9 @@ const options = {
   spanDelay: 400,
   fillDelay: 100,
   grid: true,
-  minDim: 4,
-  maxDim: 16,
-  stagBias: 1,
+  minDim: 8,
+  maxDim: 15,
+  straightBias: 1,
   spans: true
 };
 
@@ -83,7 +79,7 @@ function drawLine(ctx, {x: sX, y: sY}, {x: dX, y: dY}, scl = 1) {
 }
 
 function drawSpan(ctx, edge) {
-  let [a, b] = edge.map(r => r.bounds.center());
+  let [a, b] = edge.map(r => r.bounds.center);
   ctx.strokeStyle = 'blue';
   ctx.fillStyle = 'blue';
   ctx.lineWidth = 4;
@@ -233,10 +229,10 @@ window.addEventListener('load', () => {
   }
 
   let demos = [
-    new Demo(getScreen($('#partitions')), showPartitions),
-    new Demo(getScreen($('#rooms')), showRooms),
-    new Demo(getScreen($('#spans')), showSpans),
-    new Demo(getScreen($('#corridors')), showCorridors)
+    new Demo(getScreen($('#partitions-container')), showPartitions),
+    new Demo(getScreen($('#rooms-container')), showRooms),
+    new Demo(getScreen($('#spans-container')), showSpans),
+    new Demo(getScreen($('#corridors-container')), showCorridors)
   ];
 
   function redraw() {
@@ -273,22 +269,24 @@ window.addEventListener('load', () => {
 
 
   function setupControls() {
+    function attachSlider(id, prop, isInt = false) {
+      let slide = $(`#${id}-slider`);
+      slide.addEventListener('change', (e) => {
+        let parse = (isInt === false) ? parseFloat : parseInt;
+        options[prop] =  parse(e.target.value);
+        console.log(prop, e.target.value);
+      });
+    }
     $('.gen-button').forEach(btn => btn.addEventListener('click', () => {
       init();
       redraw();
     }));
-    let sqSlide = $('#squariness-slider');
-    sqSlide.addEventListener('change', () => {
-      options.sqf = parseFloat(sqSlide.value);
-      console.log(options.sqf);
-    });
-    let spvSlide = $('#split-var-slider');
-    spvSlide.addEventListener('change', () => {
-      options.varf = parseFloat(spvSlide.value);
-      console.log(options.varf);
-    });
+    attachSlider('squariness', 'sqf');
+    attachSlider('split-var', 'varf');
+    attachSlider('min-dim', 'minDim');
+    attachSlider('max-dim', 'maxDim');
+    attachSlider('stag-bias', 'straightBias');
   }
-
   setupControls();
   init();
   redraw();

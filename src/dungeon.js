@@ -1,5 +1,5 @@
 import { random } from 'webgame-lib/lib/random';
-import { Rect, complement, dimension, Vec } from 'webgame-lib/lib/geom';
+import { Rect, Axis, Vec } from 'webgame-lib/lib/geom';
 
 class Room {
 
@@ -10,7 +10,7 @@ class Room {
   }
 
   dist(other) {
-    return this.bounds.center().blockDist(other.bounds.center());
+    return this.bounds.center.blockDist(other.bounds.center);
   }
 }
 
@@ -20,12 +20,12 @@ const ROOM_SPACE = 2;
 
 export class Dungeon {
 
-  constructor(w, h, { minDim, maxDim, stagBias }) {
+  constructor(w, h, { minDim, maxDim, straightBias }) {
     this.w = w;
     this.h = h;
     this.minDim = minDim;
     this.maxDim = maxDim;
-    this.stagBias = stagBias;
+    this.straightBias = straightBias;
     this.grid = new Array(w * h);
     for (let i = 0; i < w * h; i++) {
       this.grid[i] = 0;
@@ -47,8 +47,8 @@ export class Dungeon {
         if (picked) {
           let r = part.rect;
           if (r.w < cuttoff || r.h < cuttoff) continue;
-          let w = random.nextInt(this.minDim, r.w - ROOM_SPACE);
-          let h = random.nextInt(this.minDim, r.h - ROOM_SPACE);
+          let w = random.nextInt(this.minDim, Math.min(r.w - ROOM_SPACE, this.maxDim));
+          let h = random.nextInt(this.minDim, Math.min(r.h - ROOM_SPACE, this.maxDim));
           let x = r.x + random.nextInt(ROOM_SPACE, r.w - w);
           let y = r.y + random.nextInt(ROOM_SPACE, r.h - h);
           this.rooms.push(new Room(new Rect(x, y, w, h)));
@@ -71,7 +71,6 @@ export class Dungeon {
   makeCorridor(roomA, roomB) {
     let bA = roomA.bounds.clone().shrink(2);
     let bB = roomB.bounds.clone().shrink(2);
-
     function roomOf(b) {
       return b === bA ? roomA : roomB;
     }
@@ -82,15 +81,15 @@ export class Dungeon {
     let min, max, segments;
     if (axes.length === 1) {
       let [axis] = axes;
-      let comp = complement(axis);
-      let aD = dimension(axis);
-      let cD = dimension(comp);
+      let comp = Axis.complement(axis);
+      let aD = Axis.dimension(axis);
+      let cD = Axis.dimension(comp);
       [min, max] = bA.order(bB, axis);
       from[axis] = min[axis] + min[aD];
       to[axis] = max[axis] - 1;
       let hasStagLen = (max[comp] + max[cD]) - min[comp] > MIN_STAG_LEN;
       let hasCliffGap = to[axis] - from[axis] >= 2 * CLIFF_GAP;
-      if (!hasStagLen || !hasCliffGap || random.choice()) {
+      if (!hasStagLen || !hasCliffGap || random.choice(this.straightBias)) {
         // straight
         let overlap = bA.overlap(bB, comp);
         let at = random.nextInt(...overlap);
@@ -116,8 +115,26 @@ export class Dungeon {
       }
     } else {
       // right angled
-      // FIXME
       let axis = random.select(axes);
+      let comp = Axis.complement(axis);
+      let aD = Axis.dimension(axis);
+      let cD = Axis.dimension(comp);
+      [min, max] = bA.order(bB, axis);
+      from[axis] = random.nextInt(min[axis], min[axis] + min[aD] - 1);
+      to[comp] = random.nextInt(max[comp], max[comp] + max[cD] - 1);
+      to[axis] = max[axis] - 1;
+      if (to[comp] < min[comp]) {
+        from[comp] = min[comp] - 1;
+      } else {
+        from[comp] = min[comp] + min[cD];
+      }
+      let sec = new Vec();
+      sec[axis] = from[axis];
+      sec[comp] = to[comp];
+      segments = [
+        [from, sec],
+        [sec, to]
+      ];
     }
     roomOf(min).doors.push(from);
     roomOf(max).doors.push(to);
